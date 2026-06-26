@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Peminjam;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +27,6 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            // Redirect sesuai role
             if (Auth::user()->isAdmin()) {
                 return redirect()->route('admin.alat.index');
             }
@@ -45,25 +45,35 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
-    // ── Proses register (hanya bisa daftar sebagai user biasa) ────
+    // ── Proses register + auto-create peminjam ────────────────────
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name'                  => 'required|string|max:150',
-            'email'                 => 'required|email|unique:users,email',
-            'password'              => 'required|min:6|confirmed',
+            'name'     => 'required|string|max:150',
+            'nim_nip'  => 'required|string|max:50|unique:peminjams,nim_nip',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|min:6|confirmed',
         ]);
 
+        // 1. Buat akun user
         $user = User::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role'     => 'user', // register selalu jadi user biasa
+            'role'     => 'user',
+        ]);
+
+        // 2. Otomatis buat data peminjam yang terhubung via email (kontak)
+        Peminjam::create([
+            'nama'    => $validated['name'],
+            'nim_nip' => $validated['nim_nip'],
+            'kontak'  => $validated['email'],
         ]);
 
         Auth::login($user);
 
-        return redirect()->route('user.peminjaman.index');
+        return redirect()->route('user.peminjaman.index')
+                         ->with('success', 'Akun berhasil dibuat. Selamat datang, ' . $user->name . '!');
     }
 
     // ── Logout ────────────────────────────────────────────────────

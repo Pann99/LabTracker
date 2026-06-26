@@ -12,13 +12,10 @@ use Illuminate\Support\Facades\Auth;
 class PeminjamanController extends Controller
 {
     /**
-     * Tampilkan riwayat peminjaman milik user yang sedang login.
-     * Cocokkan berdasarkan email user == kontak peminjam,
-     * atau kita buat relasi lewat peminjam_id yang terhubung ke user.
+     * Tampilkan riwayat peminjaman + data untuk modal pinjam.
      */
     public function index(Request $request)
     {
-        // Cari data peminjam yang emailnya sama dengan user login
         $peminjam = Peminjam::where('kontak', Auth::user()->email)->first();
 
         $query = Peminjaman::with(['alat', 'peminjam'])
@@ -36,22 +33,19 @@ class PeminjamanController extends Controller
                             ->paginate(10)
                             ->withQueryString();
 
-        return view('user.peminjaman.index', compact('peminjaman', 'peminjam'));
-    }
-
-    public function create()
-    {
-        // Cek apakah user sudah terdaftar sebagai peminjam
-        $peminjam = Peminjam::where('kontak', Auth::user()->email)->first();
-
-        if (!$peminjam) {
-            return redirect()->route('user.peminjaman.index')
-                             ->with('error', 'Akun Anda belum terdaftar sebagai peminjam. Hubungi admin.');
-        }
-
+        // Alat tersedia untuk modal pinjam
         $alats = Alat::where('status', 'tersedia')->get();
 
-        return view('user.peminjaman.create', compact('alats', 'peminjam'));
+        return view('user.peminjaman.index', compact('peminjaman', 'peminjam', 'alats'));
+    }
+
+    /**
+     * create() sudah tidak diperlukan karena pakai modal di index.
+     * Dipertahankan untuk kompatibilitas route jika masih ada.
+     */
+    public function create()
+    {
+        return redirect()->route('user.peminjaman.index');
     }
 
     public function store(Request $request)
@@ -83,7 +77,6 @@ class PeminjamanController extends Controller
 
     public function kembalikan(Request $request, Peminjaman $peminjaman)
     {
-        // Pastikan peminjaman ini milik user yang login
         $peminjam = Peminjam::where('kontak', Auth::user()->email)->first();
 
         if (!$peminjam || $peminjaman->peminjam_id !== $peminjam->id) {
