@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Peminjam;
 use Illuminate\Http\Request;
 
@@ -17,12 +18,12 @@ class PeminjamController extends Controller
 
         $peminjams = $query->orderBy('nama', 'asc')->paginate(10)->withQueryString();
 
-        return view('peminjam.index', compact('peminjams'));
+        return view('admin.peminjam.index', compact('peminjams'));
     }
 
     public function create()
     {
-        return view('peminjam.create');
+        return view('admin.peminjam.create');
     }
 
     public function store(Request $request)
@@ -35,12 +36,13 @@ class PeminjamController extends Controller
 
         Peminjam::create($validated);
 
-        return redirect()->route('peminjam.index')->with('success', 'Peminjam berhasil ditambahkan.');
+        return redirect()->route('admin.peminjam.index')
+                         ->with('success', 'Peminjam berhasil ditambahkan.');
     }
 
     public function edit(Peminjam $peminjam)
     {
-        return view('peminjam.edit', compact('peminjam'));
+        return view('admin.peminjam.edit', compact('peminjam'));
     }
 
     public function update(Request $request, Peminjam $peminjam)
@@ -53,13 +55,15 @@ class PeminjamController extends Controller
 
         $peminjam->update($validated);
 
-        return redirect()->route('peminjam.index')->with('success', 'Peminjam berhasil diperbarui.');
+        return redirect()->route('admin.peminjam.index')
+                         ->with('success', 'Peminjam berhasil diperbarui.');
     }
 
     public function destroy(Peminjam $peminjam)
     {
         $peminjam->delete();
 
-        return redirect()->route('peminjam.index')->with('success', 'Peminjam berhasil dihapus.');
+        return redirect()->route('admin.peminjam.index')
+                         ->with('success', 'Peminjam berhasil dihapus.');
     }
 }
